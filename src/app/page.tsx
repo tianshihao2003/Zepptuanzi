@@ -229,6 +229,8 @@ function WalineComponent() {
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'update' | 'about' | 'contact' | 'auto'>('update');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
+  const [copied, setCopied] = useState(false);
   const [birthday, setBirthday] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -572,6 +574,43 @@ export default function Home() {
           }} />
 
           <div className="relative w-full max-w-[520px] slide-in">
+            {/* Announcement Banner */}
+            {showAnnouncement && (
+              <div className="mb-4 pixel-border bg-[var(--accent-pink)]/10 border-[var(--accent-pink)] slide-in">
+                <div className="flex items-center justify-between p-3">
+                  <div className="flex items-center gap-2 flex-1">
+                    <PixelIcon type="chat" size={16} />
+                    <p className="text-xs text-[var(--text-primary)]">
+                      为方便广大用户交流和反馈，现创建了QQ交流群，点击
+                      <button
+                        onClick={() => setActiveTab('contact')}
+                        className="pixel-font text-[var(--accent-cyan)] hover:text-[var(--accent-yellow)] underline mx-1"
+                      >
+                        讨论
+                      </button>
+                      按钮即可看到群聊二维码即可扫描加入。
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowAnnouncement(false)}
+                    className="ml-2 p-1 hover:bg-[var(--bg-secondary)] transition-colors flex-shrink-0"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                      <rect x="2" y="2" width="2" height="2" />
+                      <rect x="4" y="4" width="2" height="2" />
+                      <rect x="6" y="6" width="4" height="4" />
+                      <rect x="10" y="4" width="2" height="2" />
+                      <rect x="12" y="2" width="2" height="2" />
+                      <rect x="4" y="10" width="2" height="2" />
+                      <rect x="2" y="12" width="2" height="2" />
+                      <rect x="10" y="10" width="2" height="2" />
+                      <rect x="12" y="12" width="2" height="2" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Top bar */}
             <div className="flex items-center justify-between mb-4 px-1">
               <div className="flex items-center gap-2">
@@ -705,6 +744,10 @@ export default function Home() {
                             className="w-24 text-right bg-transparent border-none p-0 focus:ring-0 text-sm font-bold pixel-font text-[10px]"
                           />
                         </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span></span>
+                        <p className="text-[var(--text-secondary)] text-[9px]">点我可输入</p>
                       </div>
 
                       <div className="flex flex-wrap gap-2">
@@ -925,6 +968,20 @@ export default function Home() {
                         alt="QQ群二维码"
                         className="pixel-border-sm max-w-[200px] h-auto"
                       />
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-[var(--text-secondary)] text-xs">群号：</span>
+                      <span className="pixel-font text-[10px] text-[var(--accent-cyan)]">233614921</span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText('233614921');
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="pixel-btn px-2 py-1 bg-[var(--bg-card)] text-[var(--accent-cyan)] hover:text-[var(--accent-yellow)] text-[9px] font-bold"
+                      >
+                        {copied ? '已复制' : '复制'}
+                      </button>
                     </div>
                   </div>
 
