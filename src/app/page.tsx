@@ -602,18 +602,18 @@ export default function Home() {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 mb-4 p-1 pixel-border bg-[var(--bg-card)]">
+            <div className="flex gap-1 mb-4 p-1 pixel-border bg-[var(--bg-card)] overflow-x-auto">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'flex-1 flex items-center justify-center py-2.5 px-2 transition-all',
+                    'flex-1 flex items-center justify-center py-2.5 px-2 transition-all whitespace-nowrap min-w-0',
                     activeTab === tab.id ? 'tab-active pixel-font text-[9px]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
                   )}
                 >
                   <PixelIcon type={tab.icon} size={12} />
-                  <span className="ml-2 text-xs">{tab.label}</span>
+                  <span className="ml-1.5 text-[11px]">{tab.label}</span>
                 </button>
               ))}
             </div>
