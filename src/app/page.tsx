@@ -1,39 +1,233 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { 
-  Footprints, 
-  Lock, 
-  User, 
-  RefreshCw, 
-  CheckCircle2, 
-  AlertCircle, 
-  Database, 
-  Zap, 
-  Clock, 
-  Sun,
-  Info,
-  Activity,
-  Gift,
-  Shield,
-  Moon,
-  History,
-  Dices,
-  Mail,
-  MessageSquare,
-  Phone,
-  Globe
-} from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { init } from '@waline/client';
+import '@waline/client/waline.css';
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
+const PIXEL_BORDER = '3px solid';
+const PIXEL_SHADOW = '4px 4px 0px';
+
+function PixelIcon({ type, size = 16 }: { type: string; size?: number }) {
+  const s = size;
+  const icons: Record<string, JSX.Element> = {
+    footprints: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="3" y="0" width="4" height="2" />
+        <rect x="2" y="2" width="6" height="2" />
+        <rect x="2" y="4" width="6" height="4" />
+        <rect x="3" y="8" width="4" height="2" />
+        <rect x="9" y="6" width="4" height="2" />
+        <rect x="8" y="8" width="6" height="2" />
+        <rect x="9" y="10" width="4" height="4" />
+        <rect x="10" y="14" width="2" height="2" />
+      </svg>
+    ),
+    lock: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="4" y="2" width="8" height="4" />
+        <rect x="3" y="6" width="10" height="8" />
+        <rect x="6" y="4" width="4" height="2" fill="var(--bg-primary)" />
+        <rect x="7" y="8" width="2" height="4" fill="var(--bg-primary)" />
+      </svg>
+    ),
+    user: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="5" y="1" width="6" height="6" />
+        <rect x="4" y="7" width="8" height="2" />
+        <rect x="3" y="9" width="10" height="6" />
+        <rect x="6" y="3" width="1" height="2" fill="var(--bg-primary)" />
+        <rect x="9" y="3" width="1" height="2" fill="var(--bg-primary)" />
+        <rect x="6" y="5" width="4" height="1" fill="var(--bg-primary)" />
+      </svg>
+    ),
+    refresh: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="4" y="1" width="8" height="2" />
+        <rect x="2" y="3" width="4" height="2" />
+        <rect x="2" y="5" width="2" height="4" />
+        <rect x="4" y="9" width="8" height="2" />
+        <rect x="10" y="7" width="4" height="2" />
+        <rect x="12" y="3" width="2" height="4" />
+        <rect x="6" y="3" width="1" height="1" />
+        <rect x="9" y="12" width="1" height="1" />
+      </svg>
+    ),
+    dice: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="1" y="1" width="14" height="14" />
+        <rect x="3" y="3" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="7" y="3" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="11" y="3" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="7" y="7" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="3" y="11" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="7" y="11" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="11" y="11" width="2" height="2" fill="var(--bg-primary)" />
+      </svg>
+    ),
+    gift: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="1" y="6" width="14" height="9" />
+        <rect x="0" y="5" width="16" height="2" />
+        <rect x="7" y="5" width="2" height="10" />
+        <rect x="5" y="2" width="6" height="4" />
+        <rect x="4" y="3" width="2" height="2" />
+        <rect x="10" y="3" width="2" height="2" />
+      </svg>
+    ),
+    info: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="1" y="1" width="14" height="14" />
+        <rect x="3" y="3" width="10" height="10" fill="var(--bg-primary)" />
+        <rect x="7" y="4" width="2" height="2" />
+        <rect x="7" y="7" width="2" height="5" />
+        <rect x="5" y="10" width="2" height="2" />
+      </svg>
+    ),
+    mail: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="1" y="3" width="14" height="10" />
+        <rect x="3" y="5" width="4" height="2" />
+        <rect x="9" y="5" width="4" height="2" />
+        <rect x="5" y="7" width="6" height="2" />
+        <rect x="7" y="9" width="2" height="2" />
+      </svg>
+    ),
+    chat: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="1" y="1" width="14" height="10" />
+        <rect x="3" y="11" width="4" height="4" />
+        <rect x="4" y="4" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="7" y="4" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="10" y="4" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="4" y="7" width="8" height="2" fill="var(--bg-primary)" />
+      </svg>
+    ),
+    phone: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="4" y="1" width="8" height="14" />
+        <rect x="5" y="3" width="6" height="8" fill="var(--bg-primary)" />
+        <rect x="7" y="12" width="2" height="2" fill="var(--bg-primary)" />
+      </svg>
+    ),
+    globe: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <circle cx="8" cy="8" r="7" />
+        <rect x="7" y="1" width="2" height="14" fill="var(--bg-primary)" />
+        <rect x="1" y="7" width="14" height="2" fill="var(--bg-primary)" />
+        <rect x="3" y="3" width="10" height="10" fill="var(--bg-primary)" />
+        <rect x="4" y="4" width="8" height="8" />
+        <rect x="7" y="4" width="2" height="8" fill="var(--bg-primary)" />
+        <rect x="4" y="7" width="8" height="2" fill="var(--bg-primary)" />
+      </svg>
+    ),
+    sun: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="6" y="0" width="4" height="2" />
+        <rect x="6" y="14" width="4" height="2" />
+        <rect x="0" y="6" width="2" height="4" />
+        <rect x="14" y="6" width="2" height="4" />
+        <rect x="2" y="2" width="2" height="2" />
+        <rect x="12" y="2" width="2" height="2" />
+        <rect x="2" y="12" width="2" height="2" />
+        <rect x="12" y="12" width="2" height="2" />
+        <rect x="4" y="4" width="8" height="8" />
+      </svg>
+    ),
+    moon: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="4" y="1" width="8" height="2" />
+        <rect x="2" y="3" width="4" height="2" />
+        <rect x="2" y="5" width="2" height="6" />
+        <rect x="4" y="11" width="4" height="2" />
+        <rect x="8" y="13" width="4" height="2" />
+        <rect x="12" y="5" width="2" height="8" />
+        <rect x="10" y="3" width="2" height="2" />
+      </svg>
+    ),
+    history: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="2" y="1" width="12" height="14" />
+        <rect x="4" y="3" width="8" height="10" fill="var(--bg-primary)" />
+        <rect x="6" y="5" width="2" height="4" />
+        <rect x="8" y="7" width="2" height="2" />
+        <rect x="5" y="11" width="6" height="2" />
+      </svg>
+    ),
+    check: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="12" y="2" width="2" height="2" />
+        <rect x="10" y="4" width="2" height="2" />
+        <rect x="8" y="6" width="2" height="2" />
+        <rect x="6" y="8" width="2" height="2" />
+        <rect x="4" y="6" width="2" height="2" />
+        <rect x="2" y="4" width="2" height="2" />
+      </svg>
+    ),
+    alert: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="7" y="1" width="2" height="2" />
+        <rect x="5" y="3" width="6" height="2" />
+        <rect x="4" y="5" width="8" height="2" />
+        <rect x="3" y="7" width="10" height="2" />
+        <rect x="2" y="9" width="12" height="2" />
+        <rect x="1" y="11" width="14" height="4" />
+        <rect x="7" y="6" width="2" height="4" fill="var(--bg-primary)" />
+        <rect x="7" y="12" width="2" height="2" fill="var(--bg-primary)" />
+      </svg>
+    ),
+    clock: (
+      <svg width={s} height={s} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="3" y="1" width="10" height="2" />
+        <rect x="1" y="3" width="2" height="10" />
+        <rect x="13" y="3" width="2" height="10" />
+        <rect x="3" y="13" width="10" height="2" />
+        <rect x="7" y="4" width="2" height="5" />
+        <rect x="9" y="7" width="2" height="2" />
+        <rect x="3" y="1" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="11" y="1" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="1" y="3" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="13" y="3" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="1" y="11" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="13" y="11" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="3" y="13" width="2" height="2" fill="var(--bg-primary)" />
+        <rect x="11" y="13" width="2" height="2" fill="var(--bg-primary)" />
+      </svg>
+    ),
+  };
+  return icons[type] || null;
+}
+
+function WalineComponent() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const instanceRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || instanceRef.current) return;
+
+    instanceRef.current = init({
+      el: containerRef.current,
+      serverURL: 'https://co.tsh520.cn',
+      path: '/auto',
+      dark: 'html.dark',
+      lang: 'zh-CN',
+    });
+
+    return () => {
+      instanceRef.current?.destroy?.();
+      instanceRef.current = null;
+    };
+  }, []);
+
+  return <div ref={containerRef} />;
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'update' | 'about' | 'contact'>('update');
+  const [activeTab, setActiveTab] = useState<'update' | 'about' | 'contact' | 'auto'>('update');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [birthday, setBirthday] = useState('');
   const [username, setUsername] = useState('');
@@ -46,7 +240,6 @@ export default function Home() {
     message: '',
   });
 
-  // Load saved data and theme from localStorage on mount
   useEffect(() => {
     const savedBirthday = localStorage.getItem('zepp_birthday');
     const savedUsername = localStorage.getItem('zepp_username');
@@ -63,30 +256,29 @@ export default function Home() {
       try {
         setHistory(JSON.parse(savedHistory));
       } catch (e) {
-        console.error('Failed to parse history', e);
         setHistory([]);
       }
     }
     if (savedTheme === 'dark') setIsDarkMode(true);
   }, []);
 
-  // Update theme class on body
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
       localStorage.setItem('zepp_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
       localStorage.setItem('zepp_theme', 'light');
     }
   }, [isDarkMode]);
 
-  // Auto-hide status after 5 seconds
   useEffect(() => {
     if (status.type) {
       const timer = setTimeout(() => {
         setStatus({ type: null, message: '' });
-      }, 5000);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [status]);
@@ -121,8 +313,6 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Verify birthday before submission
     if (birthday !== '0824') {
       setStatus({ type: 'error', message: '生日错误，请确认后再试' });
       return;
@@ -140,8 +330,6 @@ export default function Home() {
 
       if (response.data.success) {
         setStatus({ type: 'success', message: '步数同步成功！' });
-        
-        // Update history
         const newEntry = { date: new Date().toLocaleString(), steps };
         const newHistory = [newEntry, ...history].slice(0, 3);
         setHistory(newHistory);
@@ -159,490 +347,678 @@ export default function Home() {
     }
   };
 
+  const tabs = [
+    { id: 'update' as const, label: '步数更新', icon: 'footprints' },
+    { id: 'auto' as const, label: '自动化', icon: 'clock' },
+    { id: 'about' as const, label: '关于工具', icon: 'info' },
+    { id: 'contact' as const, label: '讨论', icon: 'chat' },
+  ];
+
   return (
-    <main
-      className={cn(
-        "min-h-screen flex flex-col items-center justify-center p-4 font-sans antialiased transition-colors duration-300",
-        isDarkMode ? "text-slate-100" : "text-slate-900"
-      )}
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-        backgroundImage: "url(https://re.tsh520.cn/img/005.webp)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
-      }}
-    >
-      {isDarkMode && (
-        <div
-          className="fixed inset-0 bg-slate-950/75"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(2,6,23,0.75)',
-            pointerEvents: 'none',
-          }}
-          aria-hidden="true"
-        />
-      )}
-      <div
-        className="relative w-full max-w-[480px]"
-        style={{ position: 'relative', width: '100%', maxWidth: 480 }}
-      >
-        <div className="w-full flex items-center justify-between mb-4 px-2">
-          <div className="flex items-center space-x-3 text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-            <div className={cn("flex items-center px-2 py-1 rounded-full border shadow-sm", isDarkMode ? "bg-slate-900/70 border-slate-800" : "bg-white border-slate-100")}>
-              <Database size={10} className="mr-1" />
-              <span>API v1.0</span>
-            </div>
-            <div className={cn("flex items-center px-2 py-1 rounded-full border shadow-sm", isDarkMode ? "bg-slate-900/70 border-slate-800" : "bg-white border-slate-100")}>
-              <Activity size={10} className="mr-1 text-emerald-500" />
-              <span>可用性 99.9%</span>
-            </div>
-          </div>
-          <button
-            onClick={toggleDarkMode}
-            className={cn(
-              "p-1.5 rounded-full border shadow-sm transition-all active:scale-95",
-              isDarkMode ? "bg-slate-900/70 border-slate-800 text-yellow-400" : "bg-white border-slate-100 text-slate-400 hover:text-slate-600"
-            )}
-          >
-            {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
-        </div>
+    <>
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700;900&display=swap');
 
-        {/* Tabs Navigation */}
-        <div
-          className={cn(
-            "flex p-1 rounded-xl border shadow-sm mb-4",
-            isDarkMode ? "backdrop-blur-md bg-slate-900/75 border-slate-800" : "bg-white border-slate-100"
-          )}
-        >
-          <button 
-            onClick={() => setActiveTab('update')}
-            className={cn(
-              "flex-1 flex items-center justify-center py-2 text-xs font-medium rounded-lg transition-all",
-              activeTab === 'update' 
-                ? (isDarkMode ? "bg-slate-800/80 text-white shadow-sm" : "bg-[#F8F9FA] text-slate-900 shadow-sm") 
-                : "text-slate-400 hover:text-slate-600"
-            )}
-          >
-            <Zap size={14} className="mr-2" />
-            步数更新
-          </button>
-          <button 
-            onClick={() => setActiveTab('about')}
-            className={cn(
-              "flex-1 flex items-center justify-center py-2 text-xs font-medium rounded-lg transition-all",
-              activeTab === 'about' 
-                ? (isDarkMode ? "bg-slate-800/80 text-white shadow-sm" : "bg-[#F8F9FA] text-slate-900 shadow-sm") 
-                : "text-slate-400 hover:text-slate-600"
-            )}
-          >
-            <Info size={14} className="mr-2" />
-            关于工具
-          </button>
-          <button 
-            onClick={() => setActiveTab('contact')}
-            className={cn(
-              "flex-1 flex items-center justify-center py-2 text-xs font-medium rounded-lg transition-all",
-              activeTab === 'contact' 
-                ? (isDarkMode ? "bg-slate-800/80 text-white shadow-sm" : "bg-[#F8F9FA] text-slate-900 shadow-sm") 
-                : "text-slate-400 hover:text-slate-600"
-            )}
-          >
-            <MessageSquare size={14} className="mr-2" />
-            联系我
-          </button>
-        </div>
+        :root {
+          --bg-primary: #0c1929;
+          --bg-secondary: #132744;
+          --bg-card: #1a3a5c;
+          --accent-pink: #38bdf8;
+          --accent-cyan: #7dd3fc;
+          --accent-yellow: #f0f9ff;
+          --text-primary: #f0f9ff;
+          --text-secondary: #94a3b8;
+          --border-pixel: #38bdf8;
+          --shadow-pixel: #0a1628;
+        }
 
-        {/* Main Content Card */}
-        <div className={cn(
-          "rounded-[24px] border shadow-xl transition-all duration-300 overflow-hidden",
-          isDarkMode ? "backdrop-blur-md bg-slate-900/75 border-slate-800 shadow-black/40" : "bg-white border-slate-100 shadow-slate-200/50"
-        )}>
-          {activeTab === 'update' ? (
-            <div className="p-8">
-              {/* Card Header */}
-              <div className="flex justify-between items-start mb-8">
-                <div>
-                  <h2 className={cn("text-xl font-bold flex items-center", isDarkMode ? "text-white" : "text-slate-900")}>
-                    <Footprints className={cn("mr-2", isDarkMode ? "text-emerald-400" : "text-slate-900")} size={24} />
-                    团子也要跑步
-                  </h2>
-                  <p className="text-slate-400 text-[11px] mt-1 font-medium">更新您的运动步数数据</p>
+        html.light {
+          --bg-primary: #e0f2fe;
+          --bg-secondary: #bae6fd;
+          --bg-card: #ffffff;
+          --accent-pink: #0369a1;
+          --accent-cyan: #0284c7;
+          --accent-yellow: #075985;
+          --text-primary: #0c4a6e;
+          --text-secondary: #475569;
+          --border-pixel: #0369a1;
+          --shadow-pixel: #93c5fd;
+        }
+
+        * {
+          image-rendering: pixelated;
+        }
+
+        body {
+          font-family: 'Noto Sans SC', sans-serif;
+          background: var(--bg-primary);
+          color: var(--text-primary);
+          min-height: 100vh;
+          overflow-x: hidden;
+        }
+
+        .pixel-font {
+          font-family: 'Press Start 2P', cursive;
+          letter-spacing: 1px;
+        }
+
+        .pixel-border {
+          border: 3px solid var(--border-pixel);
+          box-shadow: 4px 4px 0px var(--shadow-pixel);
+        }
+
+        .pixel-border-sm {
+          border: 2px solid var(--border-pixel);
+          box-shadow: 2px 2px 0px var(--shadow-pixel);
+        }
+
+        .pixel-btn {
+          border: 3px solid var(--border-pixel);
+          box-shadow: 4px 4px 0px var(--shadow-pixel);
+          transition: all 0.1s ease;
+          position: relative;
+        }
+
+        .pixel-btn:hover {
+          transform: translate(-1px, -1px);
+          box-shadow: 5px 5px 0px var(--shadow-pixel);
+        }
+
+        .pixel-btn:active {
+          transform: translate(2px, 2px);
+          box-shadow: 2px 2px 0px var(--shadow-pixel);
+        }
+
+        .pixel-input {
+          border: 3px solid var(--border-pixel);
+          box-shadow: inset 2px 2px 0px rgba(0,0,0,0.2);
+          background: var(--bg-secondary);
+          color: var(--text-primary);
+          font-family: 'Noto Sans SC', sans-serif;
+          transition: all 0.2s ease;
+        }
+
+        .pixel-input:focus {
+          outline: none;
+          border-color: var(--accent-cyan);
+          box-shadow: inset 2px 2px 0px rgba(0,0,0,0.2), 0 0 0 2px var(--accent-cyan);
+        }
+
+        .pixel-input::placeholder {
+          color: var(--text-secondary);
+          opacity: 0.6;
+        }
+
+        .crt-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 9999;
+          background: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.1) 0px,
+            rgba(0, 0, 0, 0.1) 1px,
+            transparent 1px,
+            transparent 3px
+          );
+        }
+
+        .noise-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 9998;
+          opacity: 0.03;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        .slide-in {
+          animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .bounce-in {
+          animation: bounceIn 0.4s ease-out;
+        }
+
+        @keyframes bounceIn {
+          0% { transform: scale(0.8); opacity: 0; }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+
+        .pixel-pulse {
+          animation: pixelPulse 2s infinite;
+        }
+
+        @keyframes pixelPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+
+        .tab-active {
+          background: var(--accent-pink) !important;
+          color: white !important;
+          border-color: var(--accent-pink) !important;
+        }
+
+        .step-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          height: 12px;
+          background: var(--bg-secondary);
+          border: 2px solid var(--border-pixel);
+          outline: none;
+        }
+
+        .step-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 24px;
+          background: var(--accent-pink);
+          border: 2px solid var(--text-primary);
+          cursor: pointer;
+        }
+
+        .step-slider::-moz-range-thumb {
+          width: 20px;
+          height: 24px;
+          background: var(--accent-pink);
+          border: 2px solid var(--text-primary);
+          cursor: pointer;
+          border-radius: 0;
+        }
+
+        @keyframes glitch {
+          0% { transform: translate(0); }
+          20% { transform: translate(-2px, 2px); }
+          40% { transform: translate(-2px, -2px); }
+          60% { transform: translate(2px, 2px); }
+          80% { transform: translate(2px, -2px); }
+          100% { transform: translate(0); }
+        }
+
+        .loading-glitch {
+          animation: glitch 0.3s infinite;
+        }
+      `}</style>
+
+      <div>
+        <div className="crt-overlay" />
+        <div className="noise-overlay" />
+        
+        <main className="min-h-screen flex flex-col items-center justify-center p-4 relative">
+          {/* Pixel art background pattern */}
+          <div className="fixed inset-0 opacity-5 pointer-events-none" style={{
+            backgroundImage: `radial-gradient(circle, var(--accent-pink) 1px, transparent 1px)`,
+            backgroundSize: '24px 24px'
+          }} />
+
+          <div className="relative w-full max-w-[520px] slide-in">
+            {/* Top bar */}
+            <div className="flex items-center justify-between mb-4 px-1">
+              <div className="flex items-center gap-2">
+                <div className="pixel-border-sm px-2 py-1 bg-[var(--bg-card)]">
+                  <span className="pixel-font text-[8px] text-[var(--accent-cyan)]">API v1.0</span>
                 </div>
-                <div className={cn("flex items-center px-2 py-1 border rounded-md", isDarkMode ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-100")}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-2"></span>
-                  <span className={cn("text-[10px] font-bold", isDarkMode ? "text-emerald-400" : "text-emerald-600")}>API 在线</span>
+                <div className="pixel-border-sm px-2 py-1 bg-[var(--bg-card)] flex items-center gap-1">
+                  <div className="w-2 h-2 bg-[var(--accent-cyan)] pixel-pulse" />
+                  <span className="pixel-font text-[8px] text-[var(--accent-cyan)]">ONLINE</span>
                 </div>
               </div>
+              <button
+                onClick={toggleDarkMode}
+                className="pixel-btn p-2 bg-[var(--bg-card)] hover:bg-[var(--accent-yellow)] hover:text-[var(--bg-primary)] transition-colors"
+              >
+                <PixelIcon type={isDarkMode ? 'sun' : 'moon'} size={14} />
+              </button>
+            </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-5">
-                  {/* Birthday Input */}
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-tight flex items-center">
-                      <Gift size={12} className="mr-1.5 text-pink-400" />
-                      团子和蛋糕的生日
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="请输入生日 (如: 0101)"
-                      maxLength={4}
-                      className={cn(
-                        "w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all text-sm placeholder:text-slate-300",
-                        isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-[#F8F9FA] border-slate-100 text-slate-900"
-                      )}
-                      value={birthday}
-                      onChange={(e) => handleBirthdayChange(e.target.value)}
-                      required
-                    />
+            {/* Main title */}
+            <div className="text-center mb-6 bounce-in">
+              <h1 className="pixel-font text-[var(--accent-pink)] text-2xl md:text-3xl mb-2">
+                团子也要跑步
+              </h1>
+              <p className="text-[var(--text-secondary)] text-sm">
+                ▸ 一键同步运动步数 ◂
+              </p>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 mb-4 p-1 pixel-border bg-[var(--bg-card)]">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    'flex-1 flex items-center justify-center py-2.5 px-2 transition-all',
+                    activeTab === tab.id ? 'tab-active pixel-font text-[9px]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
+                  )}
+                >
+                  <PixelIcon type={tab.icon} size={12} />
+                  <span className="ml-2 text-xs">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Content Card */}
+            <div className="pixel-border bg-[var(--bg-card)] bounce-in">
+              {activeTab === 'update' ? (
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h2 className="font-bold text-lg flex items-center gap-2">
+                        <PixelIcon type="footprints" size={20} />
+                        步数更新
+                      </h2>
+                      <p className="text-[var(--text-secondary)] text-[11px] mt-1">更新您的运动步数数据</p>
+                    </div>
+                    <div className="pixel-border-sm px-2 py-1 bg-[var(--bg-secondary)]">
+                      <span className="pixel-font text-[7px] text-[var(--accent-cyan)] flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 bg-[var(--accent-cyan)] pixel-pulse" />
+                        就绪
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Username Input */}
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-tight flex items-center">
-                      <User size={12} className="mr-1.5" />
-                      账号
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="请输入账号"
-                      className={cn(
-                        "w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all text-sm placeholder:text-slate-300",
-                        isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-[#F8F9FA] border-slate-100 text-slate-900"
-                      )}
-                      value={username}
-                      onChange={(e) => handleUsernameChange(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  {/* Password Input */}
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-tight flex items-center">
-                      <Lock size={12} className="mr-1.5" />
-                      密码
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="请输入密码"
-                      className={cn(
-                        "w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all text-sm placeholder:text-slate-300",
-                        isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-[#F8F9FA] border-slate-100 text-slate-900"
-                      )}
-                      value={password}
-                      onChange={(e) => handlePasswordChange(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  {/* Steps Input with Slider */}
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-tight flex items-center">
-                        <Footprints size={12} className="mr-1.5" />
-                        步数
+                  {/* Form */}
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Birthday */}
+                    <div className="space-y-2">
+                      <label className="pixel-font text-[11px] text-[var(--accent-yellow)] flex items-center gap-1.5">
+                        <PixelIcon type="gift" size={12} />
+                        团子和蛋糕的生日
                       </label>
-                      <input 
-                        type="number"
-                        value={steps}
-                        onChange={(e) => handleStepsChange(Number(e.target.value))}
-                        className={cn("w-20 text-right bg-transparent border-none p-0 focus:ring-0 text-sm font-bold", isDarkMode ? "text-white" : "text-slate-900")}
+                      <input
+                        type="text"
+                        placeholder="使用文档中有写"
+                        maxLength={4}
+                        className="pixel-input w-full px-4 py-3 text-sm"
+                        value={birthday}
+                        onChange={(e) => handleBirthdayChange(e.target.value)}
+                        required
                       />
                     </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {[10000, 20000, 30000].map(val => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => handleStepsChange(val)}
-                          className={cn(
-                            "px-3 py-1 rounded-full text-[10px] font-bold transition-all active:scale-95",
-                            steps === val 
-                              ? "bg-slate-900 text-white" 
-                              : (isDarkMode ? "bg-slate-800 text-slate-400 hover:text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200")
-                          )}
-                        >
-                          {val/1000}K
-                        </button>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={setRandomSteps}
-                        className={cn(
-                          "px-3 py-1 rounded-full text-[10px] font-bold flex items-center transition-all active:scale-95",
-                          isDarkMode ? "bg-slate-800 text-slate-400 hover:text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                        )}
-                      >
-                        <Dices size={12} className="mr-1" />
-                        随机
-                      </button>
+
+                    {/* Username */}
+                    <div className="space-y-2">
+                      <label className="pixel-font text-[11px] text-[var(--accent-yellow)] flex items-center gap-1.5">
+                        <PixelIcon type="user" size={12} />
+                        账号
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="请输入账号"
+                        className="pixel-input w-full px-4 py-3 text-sm"
+                        value={username}
+                        onChange={(e) => handleUsernameChange(e.target.value)}
+                        required
+                      />
                     </div>
 
-                    <div className="space-y-1">
-                      <input 
+                    {/* Password */}
+                    <div className="space-y-2">
+                      <label className="pixel-font text-[11px] text-[var(--accent-yellow)] flex items-center gap-1.5">
+                        <PixelIcon type="lock" size={12} />
+                        密码
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="请输入密码"
+                        className="pixel-input w-full px-4 py-3 text-sm"
+                        value={password}
+                        onChange={(e) => handlePasswordChange(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    {/* Steps */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <label className="pixel-font text-[11px] text-[var(--accent-yellow)] flex items-center gap-1.5">
+                          <PixelIcon type="footprints" size={12} />
+                          步数
+                        </label>
+                        <div className="pixel-border-sm px-1 py-1 bg-[var(--bg-secondary)]">
+                          <input
+                            type="number"
+                            value={steps}
+                            onChange={(e) => handleStepsChange(Number(e.target.value))}
+                            className="w-24 text-right bg-transparent border-none p-0 focus:ring-0 text-sm font-bold pixel-font text-[10px]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {[10000, 20000, 30000].map((val) => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => handleStepsChange(val)}
+                            className={cn(
+                              'pixel-btn px-3 py-1.5 text-[10px] font-bold transition-all',
+                              steps === val
+                                ? 'bg-[var(--accent-pink)] text-white'
+                                : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                            )}
+                          >
+                            {val / 1000}K
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={setRandomSteps}
+                          className="pixel-btn px-3 py-1.5 bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[10px] font-bold flex items-center gap-1"
+                        >
+                          <PixelIcon type="dice" size={10} />
+                          随机
+                        </button>
+                      </div>
+
+                      <input
                         type="range"
                         min="1"
                         max="98800"
                         value={steps}
                         onChange={(e) => handleStepsChange(Number(e.target.value))}
-                        className={cn("w-full h-1.5 rounded-lg appearance-none cursor-pointer", isDarkMode ? "bg-slate-800 accent-emerald-500" : "bg-slate-100 accent-slate-900")}
+                        className="step-slider w-full cursor-pointer"
                       />
-                      <div className="flex justify-between text-[10px] font-medium text-slate-300">
+                      <div className="flex justify-between pixel-font text-[7px] text-[var(--text-secondary)]">
                         <span>1</span>
                         <span>98,800</span>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Status Message */}
-                {status.type && (
-                  <div className={cn(
-                    "flex items-center p-3 rounded-xl text-[11px] font-medium transition-all animate-in fade-in slide-in-from-top-2",
-                    status.type === 'success' 
-                      ? (isDarkMode ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border border-emerald-100") 
-                      : (isDarkMode ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-red-50 text-red-700 border border-red-100")
-                  )}>
-                    {status.type === 'success' ? (
-                      <CheckCircle2 className="mr-2 h-3.5 w-3.5 shrink-0" />
-                    ) : (
-                      <AlertCircle className="mr-2 h-3.5 w-3.5 shrink-0" />
+                    {/* Status */}
+                    {status.type && (
+                      <div
+                        className={cn(
+                          'flex items-center p-3 pixel-border-sm text-[11px] font-medium slide-in',
+                          status.type === 'success'
+                            ? 'bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] border-[var(--accent-cyan)]'
+                            : 'bg-[var(--accent-pink)]/10 text-[var(--accent-pink)] border-[var(--accent-pink)]'
+                        )}
+                      >
+                        <PixelIcon type={status.type === 'success' ? 'check' : 'alert'} size={14} />
+                        <span className="ml-2">{status.message}</span>
+                      </div>
                     )}
-                    {status.message}
-                  </div>
-                )}
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={cn(
-                    "w-full font-bold py-3.5 rounded-xl transition-all flex items-center justify-center space-x-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]",
-                    isDarkMode ? "bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/10" : "bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/10"
-                  )}
-                >
-                  {loading ? (
-                    <RefreshCw className="animate-spin h-4 w-4" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                  <span>动动吧</span>
-                </button>
+                    {/* Submit */}
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className={cn(
+                        'pixel-btn w-full font-bold py-3.5 text-sm flex items-center justify-center gap-2 transition-all',
+                        'bg-[var(--accent-pink)] text-white hover:bg-[var(--accent-yellow)] hover:text-[var(--bg-primary)]',
+                        loading && 'loading-glitch opacity-70'
+                      )}
+                    >
+                      <span className={loading ? 'animate-spin' : ''}>
+                        <PixelIcon type="refresh" size={14} />
+                      </span>
+                      <span className="pixel-font text-[10px]">{loading ? '同步中...' : '动动吧'}</span>
+                    </button>
 
-                {/* History Section */}
-                {history.length > 0 && (
-                  <div className={cn("pt-6 border-t mt-6", isDarkMode ? "border-slate-800" : "border-slate-50")}>
-                    <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">
-                      <History size={12} className="mr-1.5" />
-                      最近同步
-                    </div>
-                    <div className="space-y-2">
-                      {history.map((item, idx) => (
-                        <div key={idx} className={cn("flex justify-between items-center p-2 rounded-lg text-[10px]", isDarkMode ? "bg-slate-800/50" : "bg-slate-50")}>
-                          <span className="text-slate-400">{item.date}</span>
-                          <span className={cn("font-bold", isDarkMode ? "text-emerald-400" : "text-slate-900")}>{item.steps.toLocaleString()} 步</span>
+                    {/* History */}
+                    {history.length > 0 && (
+                      <div className="pt-5 border-t-2 border-[var(--border-pixel)]">
+                        <div className="pixel-font text-[8px] text-[var(--accent-yellow)] flex items-center gap-1.5 mb-3">
+                          <PixelIcon type="history" size={10} />
+                          最近同步
                         </div>
-                      ))}
+                        <div className="space-y-2">
+                          {history.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex justify-between items-center p-2 pixel-border-sm bg-[var(--bg-secondary)] text-[10px]"
+                            >
+                              <span className="text-[var(--text-secondary)]">{item.date}</span>
+                              <span className="pixel-font text-[9px] text-[var(--accent-cyan)]">
+                                {item.steps.toLocaleString()} 步
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </form>
+                </div>
+              ) : activeTab === 'auto' ? (
+                <div className="p-6 space-y-6 max-h-[600px] overflow-y-auto">
+                  <div className="flex items-center gap-3">
+                    <div className="pixel-border-sm p-2 bg-[var(--bg-secondary)]">
+                      <PixelIcon type="clock" size={18} />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-lg">自动化刷步数</h2>
+                      <p className="text-[var(--text-secondary)] text-[11px]">无需每天手动操作，自动同步步数</p>
                     </div>
                   </div>
-                )}
-              </form>
-            </div>
-          ) : activeTab === 'contact' ? (
-            <div className="p-8 space-y-8 overflow-y-auto max-h-[500px]">
-              {/* Contact Header */}
-              <div className="flex items-start space-x-3">
-                <div className={cn("p-2 rounded-lg", isDarkMode ? "bg-slate-800" : "bg-slate-50")}>
-                  <MessageSquare size={20} className={isDarkMode ? "text-emerald-400" : "text-slate-900"} />
-                </div>
-                <div>
-                  <h2 className={cn("text-lg font-bold", isDarkMode ? "text-white" : "text-slate-900")}>联系我</h2>
-                  <p className="text-slate-400 text-[11px] font-medium mt-0.5">如有问题或建议，欢迎联系</p>
-                </div>
-              </div>
 
-              {/* Contact Methods */}
-              <div className="space-y-6">
-                <div className={cn("p-5 rounded-xl border transition-all hover:shadow-md", isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-750" : "bg-[#F8F9FA] border-slate-100 hover:bg-slate-50")}>
-                  <div className="flex items-start space-x-4">
-                    <div className={cn("p-2 rounded-lg", isDarkMode ? "bg-blue-500/10" : "bg-blue-50")}>
-                      <Mail size={18} className={isDarkMode ? "text-blue-400" : "text-blue-600"} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={cn("text-sm font-bold mb-1", isDarkMode ? "text-slate-200" : "text-slate-900")}>邮箱</h3>
-                      <p className="text-slate-400 text-xs">3109581507@qq.com</p>
-                      <button 
-                        onClick={() => window.location.href = 'mailto:3109581507@qq.com'}
-                        className={cn("mt-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all active:scale-95", isDarkMode ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" : "bg-blue-100 text-blue-700 hover:bg-blue-200")}
-                      >
-                        发送邮件
-                      </button>
-                    </div>
+                  <div className="pixel-border-sm p-4 bg-[var(--bg-secondary)] space-y-3">
+                    <h3 className="pixel-font text-[9px] text-[var(--accent-yellow)]">服务说明</h3>
+                    <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
+                      本服务可以帮您实现每日自动刷步数，无需每天手动操作。只需提供一次账号密码，即可享受持续的自动同步服务。
+                    </p>
                   </div>
-                </div>
 
-                <div className={cn("p-5 rounded-xl border transition-all hover:shadow-md", isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-750" : "bg-[#F8F9FA] border-slate-100 hover:bg-slate-50")}>
-                  <div className="flex items-start space-x-4">
-                    <div className={cn("p-2 rounded-lg", isDarkMode ? "bg-green-500/10" : "bg-green-50")}>
-                      <MessageSquare size={18} className={isDarkMode ? "text-green-400" : "text-green-600"} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={cn("text-sm font-bold mb-1", isDarkMode ? "text-slate-200" : "text-slate-900")}>QQ</h3>
-                      <p className="text-slate-400 text-xs">3109581507</p>
-                      <button 
-                        onClick={() => window.open('https://wpa.qq.com/msgrd?v=3&uin=3109581507&site=qq&menu=yes')}
-                        className={cn("mt-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all active:scale-95", isDarkMode ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : "bg-green-100 text-green-700 hover:bg-green-200")}
-                      >
-                        打开QQ
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  <div className="space-y-3">
+                    <h3 className="pixel-font text-[9px] text-[var(--accent-yellow)]">开通方式（任选其一）</h3>
+                    <div className="space-y-3">
+                      <div className="pixel-border-sm p-3 bg-[var(--bg-secondary)]">
+                        <div className="flex items-start gap-2">
+                          <span className="pixel-font text-[8px] text-[var(--accent-pink)] mt-0.5">1.</span>
+                          <div>
+                            <p className="text-xs font-bold mb-1">邮件发送账号密码</p>
+                            <p className="text-[var(--text-secondary)] text-xs">
+                              将您的 Zepp Life（Zepp）账号和密码发送至邮箱：
+                            </p>
+                            <button
+                              onClick={() => window.location.href = 'mailto:3109581507@qq.com?subject=申请自动刷步数服务&body=账号：%0A密码：%0A每日目标步数：'}
+                              className="pixel-btn mt-2 px-3 py-1.5 bg-[var(--bg-card)] text-[var(--accent-cyan)] hover:text-[var(--accent-yellow)] text-[10px] font-bold"
+                            >
+                              发送邮件至 3109581507@qq.com →
+                            </button>
+                          </div>
+                        </div>
+                      </div>
 
-                <div className={cn("p-5 rounded-xl border transition-all hover:shadow-md", isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-750" : "bg-[#F8F9FA] border-slate-100 hover:bg-slate-50")}>
-                  <div className={cn("flex items-start space-x-4")}>
-                    <div className={cn("p-2 rounded-lg", isDarkMode ? "bg-green-500/10" : "bg-green-50")}>
-                      <Phone size={18} className={isDarkMode ? "text-green-400" : "text-green-600"} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={cn("text-sm font-bold mb-1", isDarkMode ? "text-slate-200" : "text-slate-900")}>微信</h3>
-                      <p className="text-slate-400 text-xs">dumplingandcake</p>
-                      <div className={cn("mt-2 px-3 py-2 rounded-lg text-[10px] font-medium", isDarkMode ? "bg-slate-700 text-slate-300" : "bg-slate-200 text-slate-700")}>
-                        请手动添加微信号
+                      <div className="pixel-border-sm p-3 bg-[var(--bg-secondary)]">
+                        <div className="flex items-start gap-2">
+                          <span className="pixel-font text-[8px] text-[var(--accent-pink)] mt-0.5">2.</span>
+                          <div>
+                            <p className="text-xs font-bold mb-1">在下方评论区留言</p>
+                            <p className="text-[var(--text-secondary)] text-xs">
+                              在本页下方的评论区留下您的联系方式，留言时请填写昵称和正确的邮箱，我会主动联系您。
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pixel-border-sm p-3 bg-[var(--bg-secondary)]">
+                        <div className="flex items-start gap-2">
+                          <span className="pixel-font text-[8px] text-[var(--accent-pink)] mt-0.5">3.</span>
+                          <div>
+                            <p className="text-xs font-bold mb-1">赞助 5 元</p>
+                            <p className="text-[var(--text-secondary)] text-xs">
+                              通过下方链接赞助 5 元，并附上您的账号信息。
+                            </p>
+                            <button
+                              onClick={() => window.open('https://blog.tsh520.cn/sponsor/', '_blank')}
+                              className="pixel-btn mt-2 px-3 py-1.5 bg-[var(--bg-card)] text-[var(--accent-cyan)] hover:text-[var(--accent-yellow)] text-[10px] font-bold"
+                            >
+                              前往赞助页面 →
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className={cn("p-5 rounded-xl border transition-all hover:shadow-md", isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-750" : "bg-[#F8F9FA] border-slate-100 hover:bg-slate-50")}>
-                  <div className="flex items-start space-x-4">
-                    <div className={cn("p-2 rounded-lg", isDarkMode ? "bg-purple-500/10" : "bg-purple-50")}>
-                      <Globe size={18} className={isDarkMode ? "text-purple-400" : "text-purple-600"} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={cn("text-sm font-bold mb-1", isDarkMode ? "text-slate-200" : "text-slate-900")}>博客</h3>
-                      <p className="text-slate-400 text-xs">blog.tsh520.cn</p>
-                      <button 
-                        onClick={() => window.open('https://blog.tsh520.cn/', '_blank')}
-                        className={cn("mt-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all active:scale-95", isDarkMode ? "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30" : "bg-purple-100 text-purple-700 hover:bg-purple-200")}
-                      >
-                        访问博客
-                      </button>
+                  <div className="pixel-border-sm p-4 bg-[var(--bg-secondary)]">
+                    <h3 className="pixel-font text-[9px] text-[var(--accent-yellow)] mb-2">服务承诺</h3>
+                    <ul className="space-y-1.5 text-[var(--text-secondary)] text-xs">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--accent-pink)]">▸</span>
+                        <span>账号信息仅用于自动刷步数，不会泄露给第三方</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--accent-pink)]">▸</span>
+                        <span>每日自动同步，步数随机生成，避免被检测</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--accent-pink)]">▸</span>
+                        <span>如遇问题可随时联系处理</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className="pixel-font text-[9px] text-[var(--accent-yellow)]">评论区</h3>
+                    <p className="text-[var(--text-secondary)] text-xs">
+                      如有问题或想开通服务，可在下方留言：
+                    </p>
+                    <div id="waline-container" className="pixel-border-sm bg-[var(--bg-secondary)] p-2 min-h-[200px]">
+                      <WalineComponent />
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : activeTab === 'contact' ? (
+                <div className="p-6 space-y-6 max-h-[500px] overflow-y-auto">
+                  <div className="flex items-center gap-3">
+                    <div className="pixel-border-sm p-2 bg-[var(--bg-secondary)]">
+                      <PixelIcon type="chat" size={18} />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-lg">讨论</h2>
+                      <p className="text-[var(--text-secondary)] text-[11px]">加入群聊，交流讨论</p>
+                    </div>
+                  </div>
 
-              {/* Contact Note */}
-              <div className={cn("p-4 rounded-xl border", isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-100")}>
-                <p className="text-slate-400 text-xs leading-relaxed">
-                  欢迎对工具提出建议或反馈问题，我会尽快回复您。
-                </p>
-              </div>
+                  <div className="pixel-border-sm p-4 bg-[var(--bg-secondary)] space-y-3">
+                    <h3 className="pixel-font text-[9px] text-[var(--accent-yellow)]">QQ 群</h3>
+                    <p className="text-[var(--text-secondary)] text-xs">
+                      扫描下方二维码加入 QQ 群，与其他用户交流讨论。
+                    </p>
+                    <div className="flex justify-center py-4">
+                      <img
+                        src="/qrcode.jpg"
+                        alt="QQ群二维码"
+                        className="pixel-border-sm max-w-[200px] h-auto"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pixel-border-sm p-3 bg-[var(--bg-secondary)]">
+                    <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
+                      欢迎在群内提出建议、反馈问题或分享使用心得。
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 space-y-6 max-h-[500px] overflow-y-auto">
+                  <div className="flex items-center gap-3">
+                    <div className="pixel-border-sm p-2 bg-[var(--bg-secondary)]">
+                      <PixelIcon type="info" size={18} />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-lg">关于 团子也要跑步</h2>
+                      <p className="text-[var(--text-secondary)] text-[11px]">工具说明与使用方法</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className="pixel-font text-[9px] text-[var(--accent-yellow)]">功能介绍</h3>
+                    <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
+                      本工具用于更新您的运动应用中的步数数据，通过API接口直接提交您的Zepp Life（Zepp）账号、密码和目标步数。
+                    </p>
+                    <button
+                      onClick={() => window.open('https://blog.tsh520.cn/posts/技术分享/zepplife刷步数全教程/', '_blank')}
+                      className="pixel-btn px-3 py-1.5 bg-[var(--bg-secondary)] text-[var(--accent-cyan)] hover:text-[var(--accent-yellow)] text-[10px] font-bold"
+                    >
+                      查看使用文档 →
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className="pixel-font text-[9px] text-[var(--accent-yellow)]">使用方法</h3>
+                    <ol className="space-y-2 text-[var(--text-secondary)] text-xs">
+                      {['输入生日（详见使用文档）', '输入您的Zepp Life（Zepp）账号密码', '通过输入框或滑块设置目标步数', '点击"动动吧"按钮提交'].map((step, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="pixel-font text-[8px] text-[var(--accent-pink)] mt-0.5">{i + 1}.</span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className="pixel-font text-[9px] text-[var(--accent-yellow)]">服务指标</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="pixel-border-sm p-3 bg-[var(--bg-secondary)]">
+                        <div className="pixel-font text-[7px] text-[var(--accent-cyan)] mb-1">可用性</div>
+                        <div className="font-bold">99.9%</div>
+                      </div>
+                      <div className="pixel-border-sm p-3 bg-[var(--bg-secondary)]">
+                        <div className="pixel-font text-[7px] text-[var(--accent-cyan)] mb-1">响应时间</div>
+                        <div className="font-bold">≤ 2秒</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-4 border-t-2 border-[var(--border-pixel)]">
+                    <h3 className="pixel-font text-[9px] text-[var(--accent-yellow)]">注意事项</h3>
+                    <ul className="space-y-2 text-[var(--text-secondary)] text-xs">
+                      {['本工具仅用于学习和测试用途', '请不要设置过高的步数，以免被系统判定为异常数据', '账号信息仅保存在本地浏览器，请放心使用'].map((note, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-[var(--accent-pink)]">▸</span>
+                          <span>{note}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className="pixel-font text-[9px] text-[var(--accent-yellow)]">免责声明</h3>
+                    <p className="text-[var(--text-secondary)] text-[10px] leading-relaxed">
+                      本工具仅供学习交流使用，使用本工具所产生的一切后果由用户自行承担。使用者应遵守相关法律法规，不得将本工具用于任何非法用途。开发者不对因使用本工具而导致的任何直接或间接损失负责。
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="p-8 space-y-8 overflow-y-auto max-h-[500px]">
-              {/* About Header */}
-              <div className="flex items-start space-x-3">
-                <div className={cn("p-2 rounded-lg", isDarkMode ? "bg-slate-800" : "bg-slate-50")}>
-                  <Info size={20} className={isDarkMode ? "text-emerald-400" : "text-slate-900"} />
-                </div>
-                <div>
-                  <h2 className={cn("text-lg font-bold", isDarkMode ? "text-white" : "text-slate-900")}>关于 团子也要跑步</h2>
-                  <p className="text-slate-400 text-[11px] font-medium mt-0.5">工具说明与使用方法</p>
-                </div>
-              </div>
 
-              {/* Function Intro */}
-              <div className="space-y-3">
-                <h3 className={cn("text-sm font-bold", isDarkMode ? "text-slate-200" : "text-slate-900")}>功能介绍</h3>
-                <p className="text-slate-500 text-xs leading-relaxed">
-                  本工具用于更新您的运动应用中的步数数据，通过API接口直接提交您的账号、密码和目标步数。
-                </p>
-              </div>
-
-              {/* Usage Method */}
-              <div className="space-y-3">
-                <h3 className={cn("text-sm font-bold", isDarkMode ? "text-slate-200" : "text-slate-900")}>使用方法</h3>
-                <ol className="space-y-2 text-slate-500 text-xs list-decimal list-inside ml-1">
-                  <li>输入您的账号（通常是注册时使用的邮箱）</li>
-                  <li>输入您的账号密码</li>
-                  <li>通过输入框或滑块设置目标步数</li>
-                  <li>点击“动动吧”按钮提交</li>
-                </ol>
-              </div>
-
-              {/* Metrics */}
-              <div className="space-y-3">
-                <h3 className={cn("text-sm font-bold", isDarkMode ? "text-slate-200" : "text-slate-900")}>服务指标</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className={cn("p-4 rounded-xl border space-y-2", isDarkMode ? "bg-slate-800 border-slate-700" : "bg-[#F8F9FA] border-slate-100")}>
-                    <div className={cn("flex items-center space-x-2", isDarkMode ? "text-emerald-400" : "text-slate-900")}>
-                      <Shield size={14} />
-                      <span className="text-[11px] font-bold">可用性</span>
-                    </div>
-                    <p className="text-slate-400 text-xs font-medium tracking-tight">99.9%</p>
-                  </div>
-                  <div className={cn("p-4 rounded-xl border space-y-2", isDarkMode ? "bg-slate-800 border-slate-700" : "bg-[#F8F9FA] border-slate-100")}>
-                    <div className={cn("flex items-center space-x-2", isDarkMode ? "text-emerald-400" : "text-slate-900")}>
-                      <Clock size={14} />
-                      <span className="text-[11px] font-bold">响应时间</span>
-                    </div>
-                    <p className="text-slate-400 text-xs font-medium tracking-tight">≤ 2秒</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notes */}
-              <div className={cn("space-y-3 pt-4 border-t", isDarkMode ? "border-slate-800" : "border-slate-50")}>
-                <h3 className={cn("text-sm font-bold", isDarkMode ? "text-slate-200" : "text-slate-900")}>注意事项</h3>
-                <ul className="space-y-2 text-slate-500 text-xs list-disc list-inside ml-1">
-                  <li>本工具仅用于学习和测试用途</li>
-                  <li>请不要设置过高的步数，以免被系统判定为异常数据</li>
-                  <li>账号信息仅保存在本地浏览器，请放心使用</li>
-                </ul>
-              </div>
-
-              {/* Disclaimer */}
-              <div className="space-y-3">
-                <h3 className={cn("text-sm font-bold", isDarkMode ? "text-slate-200" : "text-slate-900")}>免责声明</h3>
-                <p className="text-slate-400 text-[10px] leading-relaxed italic">
-                  本工具仅供学习交流使用，使用本工具所产生的一切后果由用户自行承担。使用者应遵守相关法律法规，不得将本工具用于任何非法用途。开发者不对因使用本工具而导致的任何直接或间接损失负责。
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+            {/* Footer */}
+            <footer className="mt-6 text-center">
+              <p className="pixel-font text-[7px] text-[var(--text-secondary)]">
+                © 2026 团子也要跑步
+              </p>
+              <p className="text-[var(--text-secondary)] text-[10px] mt-1">
+                ▃▄▅▆▇█ 像素风格 █▇▆▅▄▃
+              </p>
+            </footer>
+          </div>
+        </main>
       </div>
-
-      {/* Footer */}
-      <footer className="relative mt-8 text-center space-y-1.5">
-        <p className="text-[10px] font-medium text-slate-400">© 2026 团子也要跑步</p>
-      </footer>
-
-      {/* Global Range Input Styling */}
-      <style jsx global>{`
-        input[type='range']::-webkit-slider-thumb {
-          appearance: none;
-          width: 14px;
-          height: 14px;
-          background: ${isDarkMode ? '#10b981' : '#0f172a'};
-          border-radius: 50%;
-          border: 2px solid ${isDarkMode ? '#0f172a' : 'white'};
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-      `}</style>
-    </main>
+    </>
   );
 }
